@@ -10,8 +10,9 @@ exports.login = async (req, res) => {
         const password = req.body.password;
 
         let user = await UserModel.findByUsername(username, pool);
+        if (user.error) return res.sendStatus(500);
 
-        if (!user.error && user.length == 1) {
+        if (user.length == 1) {
             user = user[0];
 
             if (await bcrypt.compare(password, user.password)) {
@@ -42,8 +43,9 @@ exports.token = async (req, res) => {
         if (!refreshToken) return res.sendStatus(401);
 
         const user = await UserModel.findByToken(refreshToken, pool);
+        if (user.error) return res.sendStatus(500);
 
-        if (!user.error && user.length > 0) {
+        if (user.length > 0) {
             jwt.verify(
                 refreshToken,
                 process.env.REFRESH_TOKEN_SECRET,
@@ -69,19 +71,6 @@ exports.token = async (req, res) => {
         console.log(error);
         res.sendStatus(500);
     }
-};
-
-exports.authenticateToken = (req, res, next) => {
-    const authHeader = req.headers["authorization"];
-    const token = authHeader && authHeader.split(" ")[1];
-    if (token == null) return res.sendStatus(401);
-
-    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
-        if (err) return res.sendStatus(401);
-
-        req.user = user;
-        next();
-    });
 };
 
 const generateAccessToken = (user) => {

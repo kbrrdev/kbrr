@@ -20,12 +20,9 @@ exports.create = async (req, res) => {
         };
 
         const createdUser = await UserModel.create(user, pool);
+        if (createdUser.error) return res.sendStatus(500);
 
-        if (!createdUser.error) {
-            res.sendStatus(201);
-        } else {
-            res.sendStatus(500);
-        }
+        res.sendStatus(201);
     } catch (error) {
         console.log(error);
         res.sendStatus(500);
@@ -36,13 +33,12 @@ exports.create = async (req, res) => {
 exports.getAll = async (req, res) => {
     try {
         const users = await UserModel.getAll(pool);
+        if (users.error) return res.sendStatus(500);
 
-        if (!users.error && users.length > 0) {
+        if (users.length > 0) {
             res.status(200).send({ data: users });
-        } else if (!users.error && users.length <= 0) {
-            res.sendStatus(204);
         } else {
-            res.sendStatus(500);
+            res.status(204).send({ message: "No data found!" });
         }
     } catch (error) {
         console.log(error);
@@ -63,12 +59,12 @@ exports.findOne = async (req, res) => {
             user = await UserModel.findByEmail(email, pool);
         }
 
-        if (!user.error && user.length > 0) {
+        if (user.error) return res.sendStatus(500);
+
+        if (user.length > 0) {
             res.status(200).send({ data: user });
-        } else if (!user.error && user.length < 0) {
-            res.sendStatus(204);
         } else {
-            res.sendStatus(500);
+            res.sendStatus(204);
         }
     } catch (error) {
         console.log(error);
@@ -93,20 +89,19 @@ exports.paginateAll = async (req, res) => {
 
         const users = await UserModel.pagination(queryReq, connection);
 
-        if (!users.error) {
-            if (users.data.length > 0) {
-                if (users.pagination) {
-                    res.status(200).send(users);
-                } else {
-                    res.status(206).send(users);
-                }
-            } else if (users.data.length <= 0) {
-                res.sendStatus(204);
-            }
+        if (users.error) {
+            await connection.release();
+            return res.sendStatus(500);
+        }
 
-            res.status(status).send(users);
+        if (users.data.length > 0) {
+            if (users.pagination) {
+                res.status(200).send(users);
+            } else {
+                res.status(206).send(users);
+            }
         } else {
-            res.sendStatus(500);
+            res.status(204).send({ message: "No data found!" });
         }
     } catch (error) {
         res.sendStatus(500);

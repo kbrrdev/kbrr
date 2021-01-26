@@ -1,5 +1,6 @@
 const authMiddleware = require("./auth.middleware");
 const userMiddleware = require("./user.middleware");
+const { query } = require("express-validator");
 
 const validate = (req, res, next) => {
     const errors = validationResult(req);
