@@ -18,6 +18,7 @@ app.use(bodyParser.json());
 
 require("./src/routes/user.route.js")(app);
 require("./src/routes/auth.route.js")(app);
+require("./src/routes/rate.route.js")(app);
 
 app.listen(process.env.PORT, () =>
     console.log(`Listen on port ${process.env.PORT}.`)

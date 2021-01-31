@@ -9,7 +9,7 @@ module.exports = (app) => {
 
     // Create a new Customer
     app.post(
-        "/api/users",
+        "/api/users/",
         authMiddleware.authenticateToken,
         userMiddleware.create,
         validate,
@@ -18,14 +18,14 @@ module.exports = (app) => {
 
     // // Retrieve all User
     app.get(
-        "/api/users",
+        "/api/users/",
         authMiddleware.authenticateToken,
         usersController.getAll
     );
 
     // Retrieve a paginated users
     app.get(
-        "/api/users/pagination",
+        "/api/users/pagination/",
         authMiddleware.authenticateToken,
         pagination,
         validate,
@@ -34,7 +34,7 @@ module.exports = (app) => {
 
     // Retrieve a single Customer with userId
     app.get(
-        "/api/users/:id",
+        "/api/users/:id/",
         authMiddleware.authenticateToken,
         usersController.findOne
     );

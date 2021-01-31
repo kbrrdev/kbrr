@@ -1,5 +1,5 @@
 const { UserModel } = require("../models");
-const pool = require("../../config/db.config");
+const { promisePool } = require("../../config/mysql2.config");
 const moment = require("moment");
 const bcrypt = require("bcrypt");
 
@@ -8,35 +8,45 @@ exports.create = async (req, res) => {
     try {
         const body = req.body;
         let hashedPassword = await bcrypt.hash(body.password, 10);
+        req.body.password = hashedPassword;
 
-        let user = {
-            username: body.username,
-            password: hashedPassword,
-            email: body.email,
-            first_name: body.first_name,
-            last_name: body.last_name,
-            created_at: moment().format("YYYY-MM-DD HH:mm:ss"),
-            updated_at: moment().format("YYYY-MM-DD HH:mm:ss"),
-        };
+        const createdUser = await UserModel.create(
+            new UserModel(req.body),
+            promisePool
+        );
+        if (createdUser.error)
+            return res.status(500).send({ error: "Database error!" });
 
-        const createdUser = await UserModel.create(user, pool);
-        if (createdUser.error) return res.sendStatus(500);
-
-        res.sendStatus(201);
+        res.status(201).send({ message: "User has been created." });
     } catch (error) {
         console.log(error);
-        res.sendStatus(500);
+        res.status(500).send({ error: "Database error!" });
     }
+};
+
+exports.update = async (req, res) => {
+    try {
+        let user = new UserModel(req.body);
+        const id = req.params.id;
+
+        let data = UserModel.updateById(id, user, promisePool);
+
+        if (password) {
+        }
+    } catch (error) {}
 };
 
 // Retrieve all Users from the database.
 exports.getAll = async (req, res) => {
     try {
-        const users = await UserModel.getAll(pool);
+        const users = await UserModel.getAll(promisePool);
         if (users.error) return res.sendStatus(500);
 
         if (users.length > 0) {
-            res.status(200).send({ data: users });
+            res.status(200).send({
+                data: users,
+                message: "Data fetch success.",
+            });
         } else {
             res.status(204).send({ message: "No data found!" });
         }
@@ -54,9 +64,9 @@ exports.findOne = async (req, res) => {
         let user = {};
 
         if (id) {
-            user = await UserModel.findById(id, pool);
+            user = await UserModel.findWhere("id = ?", [id], promisePool);
         } else if (email) {
-            user = await UserModel.findByEmail(email, pool);
+            user = await UserModel.findWhere("email = ?", [email], promisePool);
         }
 
         if (user.error) return res.sendStatus(500);
@@ -74,10 +84,10 @@ exports.findOne = async (req, res) => {
 
 // Retrieve paginated of all Users from the database
 exports.paginateAll = async (req, res) => {
-    const connection = await pool.connection();
+    const connection = await promisePool.connection();
 
     try {
-        const limit = req.query.limit ? req.query.limit : 25;
+        const limit = req.query.page_size ? req.query.page_size : 25;
         const page = req.query.page ? req.query.page : 1;
         const offset = (page - 1) * limit;
 

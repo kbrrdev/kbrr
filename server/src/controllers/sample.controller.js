@@ -1,5 +1,14 @@
 const User = require("../models/user.model.js");
 
+// // const connection = await promisePool.getConnection();
+// await promisePool.query("SELECT * FROM rates LIMIT 1");
+// const allConnections = await promisePool.query(
+//     "show status like 'Threads_connected'"
+// );
+// res.status(200).send("test");
+// console.log(allConnections);
+// // await connection.release();
+
 // Create and Save a new User
 exports.create = (req, res) => {
     // Validate request

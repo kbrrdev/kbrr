@@ -1,102 +1,103 @@
-// constructor
-const User = function () {
-    let fillable = ["id", "username", "first_name", "last_name", "token"];
-    this.fillable = fillable.toString();
+const BaseModel = require("./base.model");
+
+const table = "users";
+
+const select = [
+    "email",
+    "first_name",
+    "last_name",
+    "user_rold_id",
+    "type",
+    "company_id",
+    "created_by",
+    "created_on",
+    "updated_by",
+    "updated_on",
+];
+
+const softDelete = true;
+
+const User = function (data) {
+    this.email = data.email;
+    this.password = data.password;
+    this.first_name = data.first_name;
+    this.last_name = data.last_name;
+    this.user_role_id = data.user_role_id;
+    this.type = data.type;
+    this.company_id = data.company_id;
 };
 
-User.create = async (newUser, pool) => {
+User.create = async (values, pool) => {
     try {
-        const query = `INSERT INTO users SET ?`;
-        const user = await pool.query(query, newUser);
-
-        return user;
-    } catch (error) {
-        console.log("create user ", error);
-        return { error: true };
-    }
-};
-
-User.pagination = async (req, pool) => {
-    try {
-        const countQuery = `SELECT COUNT(*) AS count from users`;
-        const user = await pool.query(countQuery);
-        const userCount = user[0].count;
-
-        const query = `SELECT ${this.fillable} FROM users WHERE deleted_at IS NULL LIMIT ? OFFSET ?`;
-        const users = await pool.query(query, [req.limit, req.offset]);
-
-        const totalPages = userCount / req.limit;
-
-        let request = {
-            data: users,
+        let data = {
+            table,
+            values,
+            pool,
         };
 
-        if (totalPages > 1) {
-            request.pagination = {
-                currentPage: req.page,
-                totalPages,
-                totalItems: users.length,
-            };
-        }
-
-        return request;
+        return await BaseModel.create(data);
     } catch (error) {
         console.log("create user ", error);
         return { error: true };
     }
 };
 
-User.getAll = async (pool) => {
+User.updateById = async (id, values, pool) => {
     try {
-        const query = `SELECT ${this.fillable} FROM users WHERE deleted_at IS NULL`;
-        const users = await pool.query(query);
+        let data = {
+            table,
+            where: { id },
+            values,
+            pool,
+        };
 
-        return users;
+        return await BaseModel.update(data, softDelete);
     } catch (error) {
+        console.log("update user ", error);
+        return { error: true };
+    }
+};
+
+User.delete = async (id, pool) => {
+    try {
+        let data = {
+            table,
+            where: { id },
+            pool,
+        };
+
+        return BaseModel.delete(data, softDelete);
+    } catch (error) {
+        console.log("create user ", error);
+        return { error: true };
+    }
+};
+
+User.get = async (pagination, pool) => {
+    try {
+        let data = {
+            table,
+            pagination,
+            pool,
+        };
+
+        return await BaseModel.get(data, softDelete);
+    } catch (error) {
+        console.log("create user ", error);
         return { error: true };
     }
 };
 
 User.findById = async (id, pool) => {
     try {
-        const query = `SELECT ${this.fillable} FROM users WHERE id = ? AND deleted_at IS NULL`;
-        const user = await pool.query(query, [id]);
+        let data = {
+            select,
+            table,
+            where: { id },
+            pool,
+        };
 
-        return user;
-    } catch (error) {
-        return { error: true };
-    }
-};
-
-User.findByEmail = async (email, pool) => {
-    try {
-        const query = `SELECT ${this.fillable} FROM users WHERE email = ? AND deleted_at IS NULL`;
-        const user = await pool.query(query, [email]);
-
-        return user;
-    } catch (error) {
-        console.log("findByEmail", error);
-        return { error: true };
-    }
-};
-
-User.findByUsername = async (username, pool) => {
-    try {
-        const query = `SELECT ${this.fillable} FROM users WHERE username = ? AND deleted_at IS NULL`;
-        const user = await pool.query(query, [username]);
-
-        return user;
-    } catch (error) {
-        return { error: true };
-    }
-};
-
-User.findByToken = async (token, pool) => {
-    try {
-        const query = `SELECT ${this.fillable} FROM users WHERE token = ? AND deleted_at IS NULL`;
-        const user = await pool.query(query, [token]);
-
-        return user;
+        return await BaseModel.find(data, softDelete);
     } catch (error) {
         return { error: true };
     }

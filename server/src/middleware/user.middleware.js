@@ -1,6 +1,6 @@
 const { body } = require("express-validator");
 const User = require("../models/user.model.js");
-const pool = require("../../config/db.config");
+const { promisePool } = require("../../config/mysql2.config");
 
 exports.create = [
     body("username")
@@ -10,7 +10,7 @@ exports.create = [
         .isAlphanumeric()
         .withMessage("Username only accepts alphanumeric characters")
         .custom(async (value) => {
-            user = await User.findByUsername(value, pool);
+            user = await User.findByUsername(value, promisePool);
 
             if (!user.error && user.data.length > 0) {
                 return Promise.reject();
@@ -32,7 +32,7 @@ exports.create = [
         .normalizeEmail()
         .toLowerCase()
         .custom(async (value) => {
-            user = await User.findByEmail(value, pool);
+            user = await User.findByEmail(value, promisePool);
 
             if (!user.error && user.data.length > 0) {
                 return Promise.reject();

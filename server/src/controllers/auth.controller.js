@@ -1,5 +1,5 @@
 const { UserModel } = require("../models");
-const pool = require("../../config/db.config");
+const { promisePool } = require("../../config/mysql2.config");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -9,7 +9,7 @@ exports.login = async (req, res) => {
         const username = req.body.username;
         const password = req.body.password;
 
-        let user = await UserModel.findByUsername(username, pool);
+        let user = await UserModel.findByUsername(username, promisePool);
         if (user.error) return res.sendStatus(500);
 
         if (user.length == 1) {
@@ -23,7 +23,6 @@ exports.login = async (req, res) => {
                     message: "Login successful",
                     accessToken,
                     refreshToken,
-                    ok: true,
                 });
             } else {
                 res.sendStatus(400);
@@ -42,7 +41,7 @@ exports.token = async (req, res) => {
         const refreshToken = req.body.token;
         if (!refreshToken) return res.sendStatus(401);
 
-        const user = await UserModel.findByToken(refreshToken, pool);
+        const user = await UserModel.findByToken(refreshToken, promisePool);
         if (user.error) return res.sendStatus(500);
 
         if (user.length > 0) {

@@ -3,7 +3,7 @@ module.exports = (app) => {
     const { authMiddleware, validate } = require("../middleware");
 
     app.post(
-        "/api/login",
+        "/api/login/",
         authMiddleware.login,
         validate,
         authController.login

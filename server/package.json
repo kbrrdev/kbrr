@@ -1,5 +1,5 @@
 {
-    "name": "server-kbrr-basic",
+    "name": "server-kbrr",
     "version": "1.0.0",
     "description": "test",
     "main": "index.js",
@@ -17,6 +17,7 @@
         "express": "^4.17.1",
         "express-validator": "^6.9.2",
         "jsonwebtoken": "^8.5.1",
+        "knex": "^0.21.16",
         "moment": "^2.29.1",
         "mysql": "^2.18.1"
     },

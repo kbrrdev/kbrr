@@ -12,14 +12,14 @@ const validate = (req, res, next) => {
             location: error.location,
         }));
 
-        return res.status(400).send({ errors: newErrors, ok: false });
+        return res.status(400).send({ errors: newErrors });
     } else {
         next();
     }
 };
 
 const pagination = [
-    query("limit")
+    query("page_size")
         .optional()
         .trim()
         .toInt()
