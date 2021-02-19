@@ -1,0 +1,259 @@
+h1 {
+    font-size: $fs-h1;
+}
+
+h2 {
+    font-size: $fs-h2;
+}
+
+h3 {
+    font-size: $fs-h3;
+}
+
+h4 {
+    font-size: $fs-h4;
+}
+
+h5 {
+    font-size: $fs-h5;
+}
+
+h6 {
+    font-size: $fs-h6;
+}
+
+.h1 {
+    font-size: $fs-h1;
+}
+
+.h2 {
+    font-size: $fs-h2;
+}
+
+.h3 {
+    font-size: $fs-h3;
+}
+
+.h4 {
+    font-size: $fs-h4;
+}
+
+.h5 {
+    font-size: $fs-h5;
+}
+
+.h6 {
+    font-size: $fs-h6;
+}
+
+.py {
+    @for $i from 1 to 10 {
+        &-#{5 * $i} {
+            padding-top: 5px * $i;
+            padding-bottom: 5px * $i;
+        }
+    }
+}
+
+.px {
+    @for $i from 1 to 10 {
+        &-#{5 * $i} {
+            padding-left: 5px * $i;
+            padding-right: 5px * $i;
+        }
+    }
+}
+
+.pr {
+    @for $i from 1 to 10 {
+        &-#{5 * $i} {
+            padding-right: 5px * $i;
+        }
+    }
+}
+
+.pl {
+    @for $i from 1 to 10 {
+        &-#{5 * $i} {
+            padding-left: 5px * $i;
+        }
+    }
+}
+
+.pt {
+    @for $i from 1 to 10 {
+        &-#{5 * $i} {
+            padding-top: 5px * $i;
+        }
+    }
+}
+
+.pb {
+    @for $i from 1 to 10 {
+        &-#{5 * $i} {
+            padding-bottom: 5px * $i;
+        }
+    }
+}
+
+.my {
+    @for $i from 1 to 10 {
+        &-#{5 * $i} {
+            margin-top: 5px * $i;
+            margin-bottom: 5px * $i;
+        }
+    }
+}
+
+.mx {
+    @for $i from 1 to 10 {
+        &-#{5 * $i} {
+            margin-left: 5px * $i;
+            margin-right: 5px * $i;
+        }
+    }
+}
+
+.mr {
+    &-1 {
+        margin-right: 0.2rem;
+    }
+
+    &-2 {
+        margin-right: 0.4rem;
+    }
+
+    @for $i from 1 to 10 {
+        &-#{5 * $i} {
+            margin-right: 5px * $i;
+        }
+    }
+}
+
+.ml {
+    @for $i from 1 to 10 {
+        &-#{5 * $i} {
+            margin-left: 5px * $i;
+        }
+    }
+}
+
+.mt {
+    @for $i from 1 to 10 {
+        &-#{5 * $i} {
+            margin-top: 5px * $i;
+        }
+    }
+}
+
+.mb {
+    &-1 {
+        margin-bottom: 0.2rem;
+    }
+
+    @for $i from 1 to 10 {
+        &-#{5 * $i} {
+            margin-bottom: 5px * $i;
+        }
+    }
+}
+
+.fs {
+    &-milli {
+        font-size: $fs-milli;
+    }
+}
+
+.f {
+    &-right {
+        float: right;
+    }
+}
+
+.bb-base-1 {
+    border-bottom: 1px solid $clr-base;
+}
+
+.d-flex {
+    display: flex;
+
+    &-cc {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+    }
+
+    &-fd-c {
+        display: flex;
+        flex-direction: column;
+    }
+
+    &-jc-sb {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    &-ai-c {
+        display: flex;
+        align-items: center;
+    }
+}
+
+.d-block {
+    display: block;
+}
+
+.d-grid {
+    display: grid;
+}
+
+.p {
+    &-absolute {
+        position: absolute;
+    }
+
+    &-relative {
+        position: relative;
+    }
+}
+
+.rotate-180 {
+    transform: rotate(-180deg);
+}
+
+.txt {
+    &-center {
+        text-align: center;
+    }
+
+    &-underline {
+        text-decoration: underline;
+    }
+
+    &-uppercase {
+        text-transform: uppercase;
+    }
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.elevation {
+    &-1 {
+        box-shadow: $elevation-1;
+    }
+
+    &-2 {
+        box-shadow: $elevation-2;
+    }
+
+    &-3 {
+        box-shadow: $elevation-3;
+    }
+
+    &-4 {
+        box-shadow: $elevation-4;
+    }
+}

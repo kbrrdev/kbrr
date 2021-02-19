@@ -1,4 +1,4 @@
-const orderByToObject = (orderBy, allowed) => {
+const orderByQueryToObject = (orderBy, allowed) => {
     let newObject = {};
 
     if (orderBy) {
@@ -19,4 +19,4 @@ const orderByToObject = (orderBy, allowed) => {
     return Object.values(newObject).length > 0 ? newObject : false;
 };
 
-module.exports = { orderByToObject };
+module.exports = { orderByQueryToObject };

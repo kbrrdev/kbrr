@@ -1,0 +1,63 @@
+$fs-base: 16px;
+
+$fs-giga: 5rem;
+$fs-mega: 4.375rem;
+$fs-kilo: 3.75rem;
+
+$fs-h1: 2.25rem;
+$fs-h2: 2rem;
+$fs-h3: 1.875rem;
+$fs-h4: 1.5rem;
+$fs-h5: 1.25rem;
+$fs-h6: 1.125rem;
+
+$fs-milli: 0.875rem;
+$fs-micro: 0.75rem;
+$fs-nano: 0.625rem;
+
+$clr-error-font: #dc3545;
+$clr-error-bg: #ffbaba;
+
+$clr-sidebar-active: #17a2b8;
+$clr-sidebar-font: #c2c7d0;
+$clr-sidebar-bg: #343a40;
+$clr-sidebar-input: #3f474e;
+
+$clr-navbar-active: rgba(0, 0, 0, 0.7);
+$clr-navbar-font: rgba(0, 0, 0, 0.5);
+$clr-navbar-bg: #ffffff;
+$clr-navbar-input: #f4f6f9;
+
+$clr-input-border: #ced4da;
+
+// #c2c7d0 gray font
+// #343a40 dark sidebar
+// #17a2b8 sidebar selected
+// rgba(255,255,255,.9) sidebar child selected
+// #3f474e sidebar input background
+
+// 1px solid #4f5962 sidebar border bottom
+
+// #f4f6f9 main back background color
+
+// 1px solid #dee2e6 navbar border bottom
+// #f2f4f6 navbar input background
+// rgba(0,0,0,.6) navbar search font magining glass
+// rgba(0,0,0,.7) navbar hover font color
+// rgba(0,0,0,.5) navbar font color
+
+$clr-base: #608f9f;
+$clr-base-lt: #666;
+$clr-base-dk: #303f66;
+
+$clr-primary: rgb(0, 52, 129);
+
+$clr-secondary: #17a2b8;
+
+$clr-ntrl-min: #fff;
+$clr-ntrl-max: #212529;
+
+$elevation-1: 0 0 1px rgba(0, 0, 0, 0.13), 0 1px 3px rgba(0, 0, 0, 0.2);
+$elevation-2: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+$elevation-3: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+$elevation-4: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);

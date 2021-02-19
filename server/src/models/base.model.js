@@ -1,188 +1,208 @@
 const moment = require("moment");
-// constructor
-const BaseModel = function () {
-    this.fillable = "";
-};
-
-BaseModel.create = async ({ table, values, pool }) => {
-    try {
-        values.created_at = moment().format("YYYY-MM-DD HH:mm:ss");
-        const query = `INSERT INTO ?? SET ?`;
-        const [result, resultFields] = await pool.query(query, [table, values]);
-        return result;
-    } catch (error) {
-        console.log("create user ", error);
-        return { error: true };
+class BaseModel {
+    constructor(table, fillable, softDelete) {
+        this.fillable = fillable;
+        this.table = table;
+        this.softDelete = softDelete;
+        this.dateNow = moment().format("YYYY-MM-DD HH:mm:ss");
     }
-};
 
-BaseModel.update = async (
-    { table, values, where, orWhere, pool },
-    softDelete = false
-) => {
-    try {
-        let data = fixData({ values, where, orWhere, softDelete });
+    create = async ({ values, promisePool }) => {
+        try {
+            values = filterValues(values, this.fillable);
+            values.created_on = this.dateNow;
 
-        const query = `UPDATE ?? SET ${data.set} WHERE id IS NOT NULL ${data.where} ${data.orWhere} ${data.softDelete}`;
+            const query = `INSERT INTO ?? SET ?`;
 
-        const [result, resultFields] = await pool.query(query, [
-            table,
-            ...data.setValues,
-            ...data.whereValues,
-            ...data.orWhereValues,
-        ]);
+            const [result, resultFields] = await promisePool.query(query, [
+                this.table,
+                values,
+            ]);
 
-        return result;
-    } catch (error) {
-        console.log("create user ", error);
-        return { error: true };
-    }
-};
+            if (result.affectedRows < 1)
+                return { status: 400, message: "Bad request!" };
 
-BaseModel.delete = async (
-    { table, where, orWhere, pool },
-    softDelete = false
-) => {
-    try {
-        const date = moment().format("YYYY-MM-DD HH:mm:ss");
+            return { status: 201, message: "Create successful!" };
+        } catch (error) {
+            console.log("base model create ", error);
+            return { error: "Server error!", status: 500 };
+        }
+    };
 
-        let data = fixData({ where, orWhere, softDelete });
+    // params = values, where, orWhere
+    update = async ({ promisePool, ...params }) => {
+        try {
+            params.values = filterValues(params.values, this.fillable);
+            params.values.updated_on = this.dateNow;
+            let data = fixData({ ...params, softDelete: this.softDelete });
 
-        const query = `UPDATE ?? SET deleted_on = ${date} WHERE id IS NOT NULL ${data.where} ${data.orWhere} ${data.softDelete}`;
-        const [result, resultFields] = await pool.query(query, [
-            table,
-            ...data.whereValues,
-            ...data.orWhereValues,
-        ]);
+            const query = `UPDATE ?? SET ${data.set} WHERE ${data.where} ${data.orWhere} ${data.softDelete}`;
 
-        return result;
-    } catch (error) {
-        console.log("create user ", error);
-        return { error: true };
-    }
-};
-
-BaseModel.permanentDelete = async (
-    { table, where, orWhere, pool },
-    softDelete = false
-) => {
-    try {
-        let data = fixData({ where, orWhere, softDelete });
-
-        const query = `DELETE FROM ?? WHERE id IS NOT NULL ${data.where} ${data.orWhere} ${data.softDelete}`;
-        const [result, resultFields] = await pool.query(query, [
-            table,
-            ...data.whereValues,
-            ...data.orWhereValues,
-        ]);
-
-        return result;
-    } catch (error) {
-        console.log("create user ", error);
-        return { error: true };
-    }
-};
-
-BaseModel.get = async (
-    { select, table, where, orWhere, orderBy, pagination, pool },
-    softDelete = false
-) => {
-    try {
-        let totalPages, dataCount;
-
-        let data = fixData({
-            select,
-            where,
-            orWhere,
-            orderBy,
-            pagination,
-            softDelete,
-        });
-
-        if (data.pagination) {
-            const countQuery = `SELECT COUNT(*) AS count from ?? WHERE id IS NOT NULL ${data.where} ${data.orWhere} ${data.softDelete}`;
-            const [counter, counterFields] = await pool.query(countQuery, [
-                table,
+            const [result, resultFields] = await promisePool.query(query, [
+                this.table,
+                ...data.setValues,
                 ...data.whereValues,
                 ...data.orWhereValues,
             ]);
-            dataCount = counter[0].count;
-            totalPages = dataCount / data.paginationValues[0];
-            if (totalPages % 1 == 0) {
-                totalPages = parseInt(totalPages);
-            } else {
-                totalPages = parseInt(totalPages) + 1;
-            }
+
+            if (result.affectedRows < 1)
+                return { status: 400, message: "Bad request!" };
+
+            return { status: 202, message: "Update successful!" };
+        } catch (error) {
+            console.log("base model update ", error);
+            return { error: "Server error!", status: 500 };
         }
+    };
 
-        const query = `SELECT ?? FROM ?? WHERE id IS NOT NULL ${data.where} ${data.orWhere} ${data.softDelete} ${data.orderBy} ${data.pagination}`;
+    // params = select, where, orWhere
+    find = async ({ promisePool, ...params }) => {
+        try {
+            let data = fixData({ ...params, softDelete: this.softDelete });
 
-        const [result, resultFields] = await pool.query(query, [
-            data.select,
-            table,
-            ...data.whereValues,
-            ...data.orWhereValues,
-            ...data.paginationValues,
-        ]);
+            const query = `SELECT ?? FROM ?? WHERE ${data.where} ${data.orWhere} ${data.softDelete} LIMIT 0, 1`;
 
-        let request = {
-            data: result,
-        };
+            const [result, resultFields] = await promisePool.query(query, [
+                data.select,
+                this.table,
+                ...data.whereValues,
+                ...data.orWhereValues,
+            ]);
 
-        if (totalPages != undefined && dataCount > result.length) {
-            request.pagination = {
-                currentPage: parseInt(data.page),
-                totalPages,
-                totalItems: result.length,
+            if (result.length <= 0)
+                return { data: {}, message: "No data found.", status: 202 };
+
+            return {
+                data: result[0],
+                message: "Data retrieved success",
+                status: 200,
             };
+        } catch (error) {
+            console.log("base model find ", error);
+            return { error: "Server error!", status: 500 };
         }
+    };
 
-        if (request.pagination) {
-            return { ...request, status: 206 };
-        } else if (result.length > 0) {
-            return { ...request, status: 200 };
-        } else {
-            return { ...request, status: 202 };
+    // params = select, where, orWhere, whereLike, orderBy, pagination
+    get = async ({ promisePool, ...params }) => {
+        try {
+            let totalPages,
+                dataCount,
+                data = fixData({ ...params, softDelete: this.softDelete });
+
+            if (data.pagination) {
+                const countQuery = `SELECT COUNT(*) AS count from ?? WHERE ${data.where} ${data.orWhere} ${data.whereLike} ${data.softDelete}`;
+
+                const [
+                    counter,
+                    counterFields,
+                ] = await promisePool.query(countQuery, [
+                    this.table,
+                    ...data.whereValues,
+                    ...data.orWhereValues,
+                    ...data.whereLikeValues,
+                ]);
+
+                dataCount = counter[0].count;
+                totalPages = dataCount / data.paginationValues[0];
+
+                if (totalPages % 1 == 0) {
+                    totalPages = parseInt(totalPages);
+                } else {
+                    totalPages = parseInt(totalPages) + 1;
+                }
+            }
+
+            const query = `SELECT ?? FROM ?? WHERE ${data.where} ${data.orWhere} ${data.whereLike} ${data.softDelete} ${data.orderBy} ${data.pagination}`;
+
+            const [result, resultFields] = await promisePool.query(query, [
+                data.select,
+                this.table,
+                ...data.whereValues,
+                ...data.orWhereValues,
+                ...data.whereLikeValues,
+                ...data.paginationValues,
+            ]);
+
+            let request = {
+                data: result,
+            };
+
+            if (totalPages != undefined && dataCount > result.length) {
+                request.pagination = {
+                    currentPage: parseInt(data.page),
+                    totalPages,
+                    totalItems: dataCount,
+                    countItems: result.length,
+                    pageSize: parseInt(data.pageSize),
+                };
+            }
+
+            if (request.pagination) {
+                return { ...request, message: "Data retrieved!", status: 206 };
+            } else if (result.length > 0) {
+                return { ...request, message: "Data retrieved!", status: 200 };
+            } else {
+                return { ...request, message: "No data found!", status: 202 };
+            }
+        } catch (error) {
+            console.log("base model get ", error);
+            return { error: "Server error!", status: 500 };
         }
-    } catch (error) {
-        console.log("get " + table, error);
-        return { error: "Server error!", status: 500 };
-    }
-};
+    };
 
-BaseModel.find = async (
-    { select, table, where, orWhere, pool },
-    softDelete = false
-) => {
-    try {
-        let data = fixData({ select, where, orWhere, softDelete });
+    delete = async ({ where, orWhere, promisePool }) => {
+        try {
+            let data = fixData({ where, orWhere, softDelete: this.softDelete });
 
-        const query = `SELECT ?? FROM ?? WHERE id IS NOT NULL ${data.where} ${data.orWhere} ${data.softDelete} LIMIT 0, 1`;
-        const [result, resultFields] = await pool.query(query, [
-            data.select,
-            table,
-            ...data.whereValues,
-            ...data.orWhereValues,
-        ]);
-        if (result.length > 0) {
-            return { data: result[0] };
-        } else {
-            return { data: {}, message: "No data found." };
+            const query = `UPDATE ?? SET deleted_on = ? WHERE ${data.where} ${data.orWhere} ${data.softDelete}`;
+            const [result, resultFields] = await promisePool.query(query, [
+                this.table,
+                this.dateNow,
+                ...data.whereValues,
+                ...data.orWhereValues,
+            ]);
+
+            if (result.affectedRows < 1)
+                return { status: 400, message: "Bad request!" };
+
+            return { status: 202, message: "Delete successful!" };
+        } catch (error) {
+            console.log("base model create ", error);
+            return { error: true };
         }
-    } catch (error) {
-        console.log(error);
-        return { error: "Server error!", status: 400 };
-    }
-};
+    };
+
+    permanentDelete = async ({ where, orWhere, promisePool }) => {
+        try {
+            let data = fixData({ where, orWhere, softDelete: this.softDelete });
+
+            const query = `DELETE FROM ?? WHERE ${data.where} ${data.orWhere} ${data.softDelete}`;
+            const [result, resultFields] = await promisePool.query(query, [
+                this.table,
+                ...data.whereValues,
+                ...data.orWhereValues,
+            ]);
+
+            if (result.affectedRows < 1)
+                return { status: 400, message: "Bad request!" };
+
+            return { status: 202, message: "Delete successful!" };
+        } catch (error) {
+            console.log("base model permanent delete ", error);
+            return { error: true };
+        }
+    };
+}
 
 const fixData = (data) => {
     if (!data.select) {
-        data.select = "*";
+        data.select = ["*"];
     }
 
     if (data.values) {
-        data.setValues = Object.values(filterValues(data.values));
-        data.set = valuesToSet(filterValues(data.values));
+        data.setValues = Object.values(data.values);
+        data.set = valuesToSet(data.values);
     } else {
         data.setValues = [];
         data.set = "";
@@ -197,40 +217,63 @@ const fixData = (data) => {
     }
 
     if (data.orWhere) {
-        data.orWhere = valuesToOrWhere(data.orWhere);
         data.orWhereValues = Object.values(data.orWhere);
+        data.orWhere = valuesToOrWhere(data.orWhere);
+
+        if (data.where) {
+            data.orWhere = `AND ${data.orWhere}`;
+        }
     } else {
         data.orWhereValues = [];
         data.orWhere = "";
     }
 
+    if (data.whereLike) {
+        data.whereLikeValues = Object.values(data.whereLike);
+        data.whereLike = valuesToWhereLike(data.whereLike);
+
+        if (data.orWhere) {
+            data.orWhere = `AND ${data.orWhere}`;
+        }
+    } else {
+        data.whereLikeValues = [];
+        data.whereLike = "";
+    }
+
     if (data.orderBy) {
         data.orderBy = arrangeOrderBy(data.orderBy);
     } else {
-        data.orderBy = "";
+        data.orderBy = "ORDER BY ID DESC";
     }
 
     if (data.softDelete) {
-        data.softDelete = " AND deleted_on IS NULL";
-    } else {
-        data.softDelete = "";
+        data.softDelete = "deleted_on IS NULL";
+
+        if (data.orWhere || data.where || data.whereLike) {
+            data.softDelete = " AND " + data.softDelete;
+        }
     }
 
-    if (Object.values(filterValues(data.pagination)).length > 0) {
-        let newPagination = Object.assign({}, data.pagination);
-        let limit = newPagination.page_size ? newPagination.page_size : 25;
-        let page = newPagination.page ? newPagination.page : 1;
-        let offset = limit * (page - 1);
+    if (
+        data.pagination &&
+        Object.values(filterValues(data.pagination, ["page", "page_size"]))
+            .length > 0
+    ) {
+        let { page_size = 25, page = 1 } = data.pagination,
+            limit = page_size,
+            offset = limit * (page - 1),
+            pagination = {
+                limit: parseInt(limit),
+                offset,
+            };
 
-        newPagination.limit = parseInt(limit);
-        newPagination.offset = offset;
-
-        delete newPagination.page_size;
-        delete newPagination.page;
-
-        data.pagination = valuesToPagination(newPagination);
-        data.paginationValues = Object.values(newPagination);
-        data.page = page;
+        data = {
+            ...data,
+            pagination: valuesToPagination(pagination),
+            paginationValues: Object.values(pagination),
+            page,
+            pageSize: limit,
+        };
     } else {
         data.pagination = "";
         data.paginationValues = [];
@@ -243,58 +286,89 @@ const valuesToSet = (values) => {
     let set = "";
     Object.keys(values).map((key, idx) => {
         set = set.concat(`${key} = ?`);
-        if (Object.keys(values).length - 1 != idx) {
-            set = set.concat(`,`);
-        }
+
+        if (Object.keys(values).length - 1 != idx) set = set.concat(`,`);
     });
     return set;
 };
 
 const valuesToWhere = (values) => {
-    let set = "";
-    Object.keys(values).map((key) => {
-        set = set.concat(` AND `);
-        set = set.concat(` ${key} = ? `);
+    let whereString = "";
+    Object.keys(values).map((key, idx) => {
+        if (idx === 0) whereString = whereString.concat(`(`);
+
+        whereString = whereString.concat(` ${key} = ? `);
+
+        if (Object.values(values).length - 1 != idx)
+            whereString = whereString.concat(` AND `);
+        else whereString = whereString.concat(`)`);
     });
-    return set;
+    return whereString;
 };
 
 const valuesToOrWhere = (values) => {
-    let set = "";
-    Object.keys(values).map((key) => {
-        set = set.concat(` OR `);
-        set = set.concat(` ${key} = ? `);
+    let OrWhereString = "";
+
+    Object.keys(values).map((key, idx) => {
+        if (idx === 0) OrWhereString = OrWhereString.concat(`(`);
+
+        OrWhereString = OrWhereString.concat(` ${key} = ? `);
+
+        if (Object.values(values).length - 1 != idx)
+            OrWhereString = OrWhereString.concat(` OR `);
+        else OrWhereString = OrWhereString.concat(`)`);
     });
-    return set;
+
+    return OrWhereString;
+};
+
+const valuesToWhereLike = (values) => {
+    let whereLikeString = "";
+    Object.keys(values).map((key, idx) => {
+        if (idx === 0) whereLikeString = whereLikeString.concat(`(`);
+
+        whereLikeString = whereLikeString.concat(` ${key} LIKE ? `);
+
+        if (Object.values(values).length - 1 != idx)
+            whereLikeString = whereLikeString.concat(` OR `);
+        else whereLikeString = whereLikeString.concat(`)`);
+    });
+    return whereLikeString;
 };
 
 const valuesToPagination = (values) => {
-    let set = "";
+    let paginationString = "";
+
     Object.keys(values).map((key) => {
-        set = set.concat(` ${key} ? `);
+        paginationString = paginationString.concat(` ${key} ? `);
     });
-    return set;
+
+    return paginationString;
 };
 
 const arrangeOrderBy = (values) => {
     let orderBy = " ORDER BY ";
+
     Object.keys(values).map((key, idx) => {
         orderBy = orderBy.concat(` ${key} ${values[key]} `);
 
-        if (Object.keys(values).length - 1 != idx) {
+        if (Object.keys(values).length - 1 != idx)
             orderBy = orderBy.concat(`, `);
-        }
     });
+
     return orderBy;
 };
 
-const filterValues = (values) => {
-    let newValues = Object.assign({}, values);
-    Object.keys(newValues).forEach(
-        (key) => newValues[key] === undefined && delete newValues[key]
-    );
+const filterValues = (data, fillable) => {
+    let values = {};
 
-    return newValues;
+    Object.keys(data).map((key) => {
+        let validField = fillable.includes(key);
+
+        if (validField)
+            values = Object.assign({}, values, { [key]: data[key] });
+    });
+    return values;
 };
 
 module.exports = BaseModel;

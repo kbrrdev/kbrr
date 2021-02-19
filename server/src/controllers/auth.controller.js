@@ -1,85 +1,157 @@
-const { UserModel } = require("../models");
+const UserModel = require("../models/user.model");
 const { promisePool } = require("../../config/mysql2.config");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const moment = require("moment");
 require("dotenv").config();
 
-exports.login = async (req, res) => {
+const login = async (req, res) => {
+    const connection = await promisePool.getConnection();
     try {
-        const username = req.body.username;
-        const password = req.body.password;
+        const email = req.body.email,
+            password = req.body.password,
+            userModel = new UserModel();
 
-        let user = await UserModel.findByUsername(username, promisePool);
-        if (user.error) return res.sendStatus(500);
+        let userResponse = await userModel.find({
+            select: ["*"],
+            where: { email },
+            promisePool: connection,
+        });
 
-        if (user.length == 1) {
-            user = user[0];
+        if (userResponse.status !== 200)
+            return res.status(400).send({
+                message: "Not found!",
+            });
 
-            if (await bcrypt.compare(password, user.password)) {
-                const accessToken = generateAccessToken({ name: username });
-                const refreshToken = generateRefreshToken({ name: username });
+        let isBcryptValid = await bcrypt.compare(
+            password,
+            userResponse.data.password
+        );
 
-                res.status(200).send({
-                    message: "Login successful",
-                    accessToken,
-                    refreshToken,
-                });
-            } else {
-                res.sendStatus(400);
-            }
-        } else {
-            res.sendStatus(400);
-        }
+        if (!isBcryptValid)
+            return res.status(400).send({ message: "Not found!" });
+
+        const accessToken = generateAccessToken({
+            name: userResponse.data.email,
+        });
+
+        const refreshToken = generateRefreshToken({
+            name: userResponse.data.email,
+        });
+
+        await userModel.update({
+            values: { token: refreshToken },
+            where: { id: userResponse.data.id },
+            promisePool: connection,
+        });
+
+        let { data } = await userModel.find({
+            select: [
+                "id",
+                "company_id",
+                "email",
+                "first_name",
+                "last_name",
+                "type",
+            ],
+            where: { id: userResponse.data.id },
+            promisePool: connection,
+        });
+
+        data = {
+            ...data,
+            accessToken,
+            refreshToken,
+        };
+
+        res.status(200).send({
+            data,
+            message: "Login successful.",
+        });
     } catch (error) {
         console.log(error);
-        res.sendStatus(500);
+        res.status(500).send({ error: "Server error!" });
+    } finally {
+        console.log("Thread id: " + connection.threadId);
+        connection.release();
     }
 };
 
-exports.token = async (req, res) => {
+const logout = async (req, res) => {
+    try {
+        const id = req.body.id;
+        const userModel = new UserModel();
+
+        const refreshToken = generateRefreshToken({
+            name: moment(),
+        });
+
+        await userModel.update({
+            values: { token: refreshToken },
+            where: { id },
+            promisePool,
+        });
+
+        res.status(200).send({
+            message: "Logout successful.",
+        });
+    } catch (error) {
+        console.log(error);
+        res.status(500).send({ error: "Server error!" });
+    }
+};
+
+const refreshToken = async (req, res) => {
     try {
         const refreshToken = req.body.token;
         if (!refreshToken) return res.sendStatus(401);
+        const userModel = new UserModel();
 
-        const user = await UserModel.findByToken(refreshToken, promisePool);
-        if (user.error) return res.sendStatus(500);
+        const userResponse = await userModel.find({
+            where: { token: refreshToken },
+            promisePool,
+        });
 
-        if (user.length > 0) {
+        if (userResponse.status == 200) {
             jwt.verify(
                 refreshToken,
-                process.env.REFRESH_TOKEN_SECRET,
-                (err, _user) => {
-                    if (err) return res.sendStatus(403);
+                process.env.JWT_REFRESH_SECRET,
+                (err, response) => {
+                    if (!err) {
+                        const accessToken = generateAccessToken({
+                            name: userResponse.data.email,
+                        });
 
-                    user = user[0];
-                    const accessToken = generateAccessToken({
-                        name: user.username,
-                    });
-
-                    res.status(200).send({
-                        accessToken,
-                        refreshToken,
-                        ok: true,
-                    });
+                        res.status(200).send({
+                            message: "Token refresh success.",
+                            accessToken,
+                        });
+                    } else {
+                        res.status(403).send("Forbidden");
+                    }
                 }
             );
         } else {
-            return res.sendStatus(401);
+            res.status(403).send("Forbidden");
         }
     } catch (error) {
         console.log(error);
-        res.sendStatus(500);
+        res.status(500).send({ error: "Server error!" });
     }
 };
 
 const generateAccessToken = (user) => {
-    return jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+    return jwt.sign(user, process.env.JWT_ACCESS_SECRET, {
         expiresIn: "15m",
     });
 };
 
 const generateRefreshToken = (user) => {
-    return jwt.sign(user, process.env.REFRESH_TOKEN_SECRET, {
-        expiresIn: "7d",
-    });
+    return jwt.sign(user, process.env.JWT_REFRESH_SECRET);
+};
+
+module.exports = {
+    login,
+    logout,
+    refreshToken,
 };

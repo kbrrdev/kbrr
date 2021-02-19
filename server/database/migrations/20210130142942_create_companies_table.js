@@ -9,7 +9,7 @@ exports.up = function (knex) {
         table.string("province");
         table.string("city");
         table.string("address");
-        table.string("zipcode");
+        table.string("zip_code");
         table.string("email");
         table.string("telephone");
         table.string("telephone_extension");
@@ -21,6 +21,7 @@ exports.up = function (knex) {
         table.string("hdmf");
         table.string("tin");
         table.string("sss");
+        table.string("philhealth");
         table.string("created_by");
         table.datetime("created_on");
         table.string("updated_by");

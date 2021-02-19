@@ -1,41 +1,56 @@
-const { RateModel, PaginationModel } = require("../models");
+const RateModel = require("../models/rate.model");
 const { promisePool } = require("../../config/mysql2.config");
-const { connection } = require("../../config/db.config");
+const { orderByQueryToObject } = require("../helper");
 
-exports.find = async (req, res) => {
+const findRate = async (req, res) => {
     try {
         const id = req.params.id;
 
-        const data = await RateModel.findById(id, promisePool);
-        if (data.error) return res.status(500).send({ error: "Server error!" });
+        let rateModel = new RateModel();
 
-        if (data.length > 0) {
-            res.status(200).send({ data });
-        } else {
-            res.status(202).send({ message: "No data found!" });
-        }
+        const data = await rateModel.find({
+            select: ["*"],
+            where: { id },
+            promisePool,
+        });
+
+        let status = data.status;
+        delete data.status;
+
+        res.status(status).send(data);
     } catch (error) {
         console.log(error);
         res.status(500).send({ error: "Server error!" });
     }
 };
 
-exports.get = async (req, res) => {
+const getRates = async (req, res) => {
     const connection = await promisePool.getConnection();
     try {
-        const orderBy = req.query.order_by;
+        let rateModel = new RateModel();
+        let pagination = req.query;
 
-        const result = await RateModel.get(
-            new PaginationModel(req.query),
-            orderBy,
-            connection
-        );
+        const result = await rateModel.get({
+            select: ["*"],
+            pagination,
+            orderBy: { id: "asc" },
+            promisePool: connection,
+        });
 
-        res.status(result.status).send(result);
+        let status = result.status;
+        delete result.status;
+
+        res.status(status).send(result);
     } catch (error) {
+        console.log(error);
         res.status(500).send({ error: "Server error!", status: 500 });
     } finally {
         console.log("Thread id: " + connection.threadId);
-        await connection.release();
+        connection.release();
     }
+};
+
+module.exports = {
+    findRate,
+    getRates,
 };

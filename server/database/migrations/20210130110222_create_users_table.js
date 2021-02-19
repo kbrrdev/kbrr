@@ -8,6 +8,7 @@ exports.up = function (knex) {
         table.string("last_name").notNullable();
         table.integer("user_role_id").unsigned();
         table.string("type").notNullable();
+        table.text("token");
         table.string("created_by");
         table.datetime("created_on");
         table.string("updated_by");

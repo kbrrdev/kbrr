@@ -1,0 +1,36 @@
+.file-input {
+    position: relative;
+
+    input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .thumbs-container {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        margin-top: 16px;
+
+        .thumb {
+            display: inline-flex;
+            border-radius: 0.25rem;
+            border: 1px solid #ccc;
+            width: 100%;
+            height: 188px;
+            box-sizing: border-box;
+            background-color: #f4f6f9;
+
+            .img {
+                width: auto;
+                height: auto;
+                max-height: 100%;
+                max-width: 100%;
+                object-fit: contain;
+                object-position: center;
+                background-color: #fff;
+            }
+        }
+    }
+}

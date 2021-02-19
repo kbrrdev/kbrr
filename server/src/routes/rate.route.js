@@ -1,6 +1,9 @@
-module.exports = (app) => {
-    const rateController = require("../controllers/rate.controller.js");
+const express = require("express");
+const rateController = require("../controllers/rate.controller");
+const router = express.Router();
+const { authenticateToken } = require("../middlewares/auth.middleware");
 
-    app.get("/api/rates/:id/", rateController.find);
-    app.get("/api/rates/", rateController.get);
-};
+router.route("/").get(authenticateToken, rateController.getRates);
+router.route("/:id/").get(rateController.findRate);
+
+module.exports = router;
